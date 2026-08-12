@@ -6,6 +6,12 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
+/**
+ * Represents a Book object to marshall and unmarshall as XML and validate with an XSD schema.
+ *
+ * @author Boiki Mphore
+ * @since 12 August 2026
+ * */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "book")
 public class Book {
