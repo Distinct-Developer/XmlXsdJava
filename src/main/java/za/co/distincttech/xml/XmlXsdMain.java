@@ -1,6 +1,7 @@
 package za.co.distincttech.xml;
 
 import jakarta.xml.bind.*;
+import org.apache.poi.ss.usermodel.*;
 import org.xml.sax.SAXException;
 import za.co.distincttech.xml.models.Book;
 
@@ -12,8 +13,11 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This is the main entry point to demonstrate the XML and XSD functionalities.
@@ -27,6 +31,7 @@ public class XmlXsdMain {
     try {
       final String xsdSchemaFile = "book.xsd";
       final String xmlFile = "book.xml";
+      final String excelFile = "book_list.xlsx";
 
       generateXsdSchemaFromObject(xsdSchemaFile);
 
@@ -38,6 +43,13 @@ public class XmlXsdMain {
 
       Book generatedBook = new Book("Generated Book", "Generated Author", 2026, BigDecimal.valueOf(200.00).setScale(2, BigDecimal.ROUND_HALF_UP));
       generateXmlFileFromObjectAndXsd(generatedBook, xsdSchemaFile, "generatedBook.xml");
+
+      List<Book> booksFromExcelFile = readBooksFromExcel(excelFile);
+      String excelBooksMessage = String.format(">>> '[%s]' has a total of %d books", excelFile, booksFromExcelFile.size());
+      System.out.println(excelBooksMessage.concat("\n"));
+
+      // For fun
+      readDataFromExcelFileAndPrintTheValues(excelFile);
     }
     catch (Exception e) {
       e.printStackTrace();
@@ -186,6 +198,116 @@ public class XmlXsdMain {
       throw new JAXBException(e);
     } catch (Exception e) {
       throw new Exception(e);
+    }
+  }
+
+  /**
+   * Reads an Excel file and write the contents to an ArrayList.
+   * @param excelFileToRead The Excel file to be read.
+   * @return A list of {@link Book} objects that were read from the Excel file.
+   * @throws IOException If there is a problem reading from the specified Excel file.
+   *
+   * @author Boiki Mphore
+   * @since 13 August 2026
+   * */
+  static List<Book> readBooksFromExcel(String excelFileToRead) throws IOException {
+    List<Book> bookList = new ArrayList<>();
+    DataFormatter dataFormatter = new DataFormatter();
+
+    try (FileInputStream inputStream = new FileInputStream(excelFileToRead);
+         Workbook workbook = WorkbookFactory.create(inputStream)) {
+
+      // Assuming data is on the first sheet
+      Sheet sheet = workbook.getSheetAt(0);
+
+      // Iterate through the rows
+      for (Row row : sheet) {
+        // Skip the header row (assuming row 0 contains headers like Title, Author, etc.)
+        if (row.getRowNum() == 0) {
+          continue;
+        }
+
+        // Safely extract cell values as Strings using DataFormatter
+        String title = dataFormatter.formatCellValue(row.getCell(0));
+        String author = dataFormatter.formatCellValue(row.getCell(1));
+        String yearString = dataFormatter.formatCellValue(row.getCell(2));
+        String priceString = dataFormatter.formatCellValue(row.getCell(3));
+
+        // Skip completely empty rows
+        if (title.isEmpty() && author.isEmpty()) {
+          continue;
+        }
+
+        try {
+          // Parse numeric fields
+          int year = Integer.parseInt(yearString);
+          BigDecimal price = new BigDecimal(priceString).setScale(2, BigDecimal.ROUND_HALF_UP);
+
+          // Create Book object and add to list
+          Book book = new Book(title, author, year, price);
+          bookList.add(book);
+
+        } catch (NumberFormatException e) {
+          throw new NullPointerException("Invalid number format in row " + (row.getRowNum() + 1));
+        }
+      }
+
+    } catch (IOException e) {
+      throw new IOException(e);
+    }
+
+    return bookList;
+  }
+
+  /**
+   * Reads an Excel file and print the contents to the console.
+   * @param excelFileToRead The Excel file to be read.
+   *
+   * @author Boiki Mphore
+   * @since 13 August 2026
+   * */
+  static void readDataFromExcelFileAndPrintTheValues(String excelFileToRead) throws IOException {
+    // Use try-with-resources to ensure the file stream and workbook are closed
+    try (FileInputStream inputStream = new FileInputStream(excelFileToRead);
+         Workbook workbook = WorkbookFactory.create(inputStream)) {
+
+      // Assuming there is only one sheet, get the first sheet (index 0)
+      Sheet sheet = workbook.getSheetAt(0);
+
+      // Iterate through each row in the sheet
+      for (Row row : sheet) {
+        // Iterate through each cell in the row
+        for (Cell cell : row) {
+          // Check the cell type and format accordingly
+          switch (cell.getCellType()) {
+            case STRING:
+              System.out.print(cell.getStringCellValue() + "\t\t");
+              break;
+            case NUMERIC:
+              // Note: Dates are also stored as numeric values in Excel
+              if (DateUtil.isCellDateFormatted(cell)) {
+                System.out.print(cell.getDateCellValue() + "\t\t");
+              } else {
+                System.out.print(cell.getNumericCellValue() + "\t\t");
+              }
+              break;
+            case BOOLEAN:
+              System.out.print(cell.getBooleanCellValue() + "\t\t");
+              break;
+            case FORMULA:
+              System.out.print(cell.getCellFormula() + "\t\t");
+              break;
+            case BLANK:
+              System.out.print("[BLANK]\t\t");
+              break;
+            default:
+              System.out.print("[UNKNOWN]\t\t");
+          }
+        }
+        System.out.println(); // Move to the next line after finishing a row
+      }
+    } catch (IOException e) {
+      throw new IOException(e);
     }
   }
 }
