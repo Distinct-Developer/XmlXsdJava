@@ -1,6 +1,7 @@
 package za.co.distincttech.xml;
 
 import jakarta.xml.bind.*;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.xml.sax.SAXException;
 import za.co.distincttech.xml.models.Book;
@@ -66,7 +67,6 @@ public class XmlXsdMain {
    * */
   static void generateXsdSchemaFromObject(String xsdSchemaFile) throws Exception {
     try {
-      String filePath;
       // 1. Initialize the JAXBContext for your target class
       JAXBContext context = JAXBContext.newInstance(Book.class);
 
@@ -268,6 +268,9 @@ public class XmlXsdMain {
    * @since 13 August 2026
    * */
   static void readDataFromExcelFileAndPrintTheValues(String excelFileToRead) throws IOException {
+    String message = String.format(">>> Data in [%s] includes formulas...", excelFileToRead);
+    System.out.println(message);
+
     // Use try-with-resources to ensure the file stream and workbook are closed
     try (FileInputStream inputStream = new FileInputStream(excelFileToRead);
          Workbook workbook = WorkbookFactory.create(inputStream)) {
@@ -287,7 +290,7 @@ public class XmlXsdMain {
             case NUMERIC:
               // Note: Dates are also stored as numeric values in Excel
               if (DateUtil.isCellDateFormatted(cell)) {
-                System.out.print(cell.getDateCellValue() + "\t\t");
+                System.out.print(DateFormatUtils.format(cell.getDateCellValue(), "yyyy-MM-dd") + "\t\t");
               } else {
                 System.out.print(cell.getNumericCellValue() + "\t\t");
               }
@@ -296,7 +299,7 @@ public class XmlXsdMain {
               System.out.print(cell.getBooleanCellValue() + "\t\t");
               break;
             case FORMULA:
-              System.out.print(cell.getCellFormula() + "\t\t");
+              System.out.print("[" + cell.getCellFormula() + " || "+ cell.getNumericCellValue() + "]");
               break;
             case BLANK:
               System.out.print("[BLANK]\t\t");
