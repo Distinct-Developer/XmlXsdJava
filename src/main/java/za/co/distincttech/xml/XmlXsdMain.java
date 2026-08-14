@@ -32,6 +32,7 @@ public class XmlXsdMain {
       final String xsdSchemaFile = "book.xsd";
       final String xmlFile = "book.xml";
       final String excelFile = "book_list.xlsx";
+      final String excelFileWithFormulas = "formula_excel.xlsx";
 
       generateXsdSchemaFromObject(xsdSchemaFile);
 
@@ -49,7 +50,7 @@ public class XmlXsdMain {
       System.out.println(excelBooksMessage.concat("\n"));
 
       // For fun
-      readDataFromExcelFileAndPrintTheValues(excelFile);
+      readDataFromExcelFileAndPrintTheValues(excelFileWithFormulas);
     }
     catch (Exception e) {
       e.printStackTrace();
